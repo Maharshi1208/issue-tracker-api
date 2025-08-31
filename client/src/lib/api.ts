@@ -30,3 +30,22 @@ export async function createIssue(input: {
   const text = await res.text();
   throw new Error(`Create failed: ${res.status} ${text}`);
 }
+
+export async function updateIssue(
+  id: number,
+  patch: Partial<Pick<Issue, 'title' | 'description' | 'status' | 'priority'>>
+): Promise<Issue> {
+  const res = await fetch(`${API_URL}/api/issues/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch),
+  });
+  if (!res.ok) throw new Error(`Update failed: ${res.status}`);
+  return res.json();
+}
+
+export async function deleteIssue(id: number): Promise<void> {
+  const res = await fetch(`${API_URL}/api/issues/${id}`, { method: 'DELETE' });
+  if (res.status === 204) return;
+  if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
+}
