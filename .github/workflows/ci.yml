@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
 
 jobs:
@@ -16,10 +16,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: 'npm'
+          cache: npm
 
       - name: Install deps
         run: npm ci
 
+      # Optional: compile to catch TS errors early
+      - name: Build
+        run: npm run build
+
+      # Run Jest. --passWithNoTests avoids failing if no tests are found.
       - name: Run tests
-        run: npm test
+        run: npm test -- --runInBand --passWithNoTests
