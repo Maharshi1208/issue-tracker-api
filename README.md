@@ -1,18 +1,36 @@
-# Issue Tracker API (TypeScript + Express + SQLite)
-
-A minimal, production-style REST API for tracking issues/bugs with type-safe validation (Zod).
-Includes CRUD endpoints, ready for tests and CI.
+# Issue Tracker API
 
 ![CI](https://github.com/Maharshi1208/issue-tracker-api/actions/workflows/ci.yml/badge.svg)
 
-## Stack
-- Node.js, TypeScript, Express
-- SQLite (better-sqlite3)
-- Zod for request validation
-- Jest + Supertest (to be added)
-- GitHub Actions CI (to be added)
+A minimal **Issue Tracker REST API** built with **TypeScript, Express, and SQLite**.  
+Designed to demonstrate **clean API design, testing practices, and CI integration** for Software Quality Assurance and backend development.
 
-## Run locally
+---
+
+## ✨ Features
+- CRUD operations for issues (create, list, update, delete)
+- Input validation with [Zod](https://zod.dev)
+- SQLite database (file or in-memory for tests)
+- Jest + Supertest integration tests
+- GitHub Actions CI pipeline
+- ESLint + Prettier setup for clean code
+
+---
+
+## 🛠️ Tech Stack
+- **Language:** TypeScript
+- **Framework:** Express
+- **Database:** SQLite (better-sqlite3)
+- **Validation:** Zod
+- **Testing:** Jest + Supertest
+- **Dev tools:** ts-node-dev, ESLint, Prettier
+- **CI/CD:** GitHub Actions
+
+---
+
+## 🚀 Getting Started
+
+### 1. Clone the repo
 ```bash
-npm run dev
-# Server: http://localhost:3000
+git clone git@github.com:Maharshi1208/issue-tracker-api.git
+cd issue-tracker-api
