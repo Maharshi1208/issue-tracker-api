@@ -10,5 +10,34 @@ services:
       - dbdata:/app/data
     restart: unless-stopped
 
+  client:
+    image: node:18-alpine
+    working_dir: /app
+    # install deps (first run) then start Vite on 0.0.0.0 so it’s reachable from host
+    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0"
+    ports:
+      - "5173:5173"
+    environment:
+      # React runs in the browser; localhost:3000 points to the API port on your host
+      - VITE_API_URL=http://localhost:3000
+    volumes:
+      - ./client:/app
+    depends_on:
+      - api
+
+  jmeter:
+    image: justb4/jmeter:latest
+    depends_on:
+      - api
+    volumes:
+      - ./perf/jmeter:/test
+      - ./perf/results:/results
+    command: >
+      -n -t /test/issue-api.jmx
+      -Jserver=api
+      -Jport=3000
+      -l /results/result.jtl
+      -e -o /results/report
+
 volumes:
   dbdata:
