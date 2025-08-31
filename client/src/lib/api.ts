@@ -10,8 +10,14 @@ export type Issue = {
   updated_at: string;
 };
 
-export async function listIssues(): Promise<Issue[]> {
-  const res = await fetch(`${API_URL}/api/issues`);
+export type Paged<T> = { data: T[]; page: number; limit: number; total: number };
+
+export async function listIssues(page = 1, limit = 10, q = ''): Promise<Paged<Issue>> {
+  const url = new URL(`${API_URL}/api/issues`);
+  url.searchParams.set('page', String(page));
+  url.searchParams.set('limit', String(limit));
+  if (q) url.searchParams.set('q', q);
+  const res = await fetch(url);
   if (!res.ok) throw new Error(`List failed: ${res.status}`);
   return res.json();
 }
