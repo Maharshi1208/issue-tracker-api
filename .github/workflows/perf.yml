@@ -1,0 +1,63 @@
+name: Performance Smoke
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "Dockerfile"
+      - "docker-compose.yml"
+      - "perf/**"
+  workflow_dispatch:
+
+jobs:
+  perf:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build images
+        run: docker compose build
+
+      - name: Start API
+        run: docker compose up -d api
+
+      - name: Wait for API
+        run: |
+          for i in {1..30}; do
+            curl -sf http://localhost:3000/health && exit 0
+            sleep 2
+          done
+          echo "API did not become healthy"; exit 1
+
+      - name: Run JMeter (HTML report)
+        env:
+          USERS: ${{ vars.PERF_USERS || 10 }}
+          LOOPS: ${{ vars.PERF_LOOPS || 5 }}
+        run: |
+          rm -rf perf/results || true
+          OUT="report-$GITHUB_RUN_ID"
+          mkdir -p perf/results
+          docker compose run --rm jmeter \
+            -n -t /test/issue-api.jmx \
+            -Jserver=api -Jport=3000 \
+            -Jusers=$USERS -Jloops=$LOOPS \
+            -Jjmeter.save.saveservice.output_format=csv \
+            -l /results/$OUT.jtl \
+            -e -o /results/$OUT
+          echo "OUT=$OUT" >> $GITHUB_ENV
+
+      - name: Fail build if any sample failed
+        run: |
+          if grep -q ',false,' perf/results/${OUT}.jtl; then
+            echo "JMeter failures detected"; exit 1; fi
+
+      - name: Upload HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jmeter-report
+          path: perf/results/**
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
