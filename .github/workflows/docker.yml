@@ -3,15 +3,8 @@ name: Build & Push Docker images
 on:
   push:
     branches: [main]
-    paths:
-      - "src/**"
-      - "client/**"
-      - "package*.json"
-      - "tsconfig.json"
-      - "Dockerfile"
-      - "client/Dockerfile"
-      - ".github/workflows/docker.yml"
-  workflow_dispatch:
+    tags: ['v*']               # Build automatically when you push tags like v1.0.0
+  workflow_dispatch:           # Also allow manual runs (choose a ref/tag in the UI)
 
 permissions:
   contents: read
@@ -20,20 +13,19 @@ permissions:
 jobs:
   build-push:
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
-        target: [api, web]
+        target: [api, web]     # Build both images
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Lowercase owner for GHCR (required)
       - name: Lowercase owner
         id: lc
         run: echo "owner=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_OUTPUT
 
+      # Figure out which Dockerfile/context to use for each image
       - name: Set image context
         id: ctx
         run: |
@@ -47,10 +39,10 @@ jobs:
             echo "dockerfile=client/Dockerfile" >> $GITHUB_OUTPUT
           fi
 
-      - name: Set up QEMU
+      - name: Setup QEMU
         uses: docker/setup-qemu-action@v3
 
-      - name: Set up Buildx
+      - name: Setup Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Login to GHCR
@@ -60,15 +52,29 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build & push
+      # Generate tags:
+      #  - latest (only on main)
+      #  - v1.2.3 and 1.2.3 (on tag builds)
+      #  - sha-<shortsha> (always)
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ steps.lc.outputs.owner }}/${{ steps.ctx.outputs.image }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=semver,pattern={{version}},enable=${{ startsWith(github.ref,'refs/tags/v') }}
+            type=semver,pattern=v{{version}},enable=${{ startsWith(github.ref,'refs/tags/v') }}
+            type=sha
+
+      - name: Build & Push
         uses: docker/build-push-action@v6
         with:
           context: ${{ steps.ctx.outputs.context }}
           file: ${{ steps.ctx.outputs.dockerfile }}
           push: true
           platforms: linux/amd64
-          tags: |
-            ghcr.io/${{ steps.lc.outputs.owner }}/${{ steps.ctx.outputs.image }}:latest
-            ghcr.io/${{ steps.lc.outputs.owner }}/${{ steps.ctx.outputs.image }}:sha-${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
