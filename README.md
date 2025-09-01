@@ -105,3 +105,29 @@ docker run --rm -v "$(pwd)/perf/results:/results" alpine sh -c 'rm -rf /results/
 "lint": "eslint . --ext .ts",
 "format": "prettier --write ."
 
+## Remote access (Cloudflare Tunnel)
+
+You can expose the API and the web UI over temporary HTTPS tunnels for quick sharing.
+
+### Tunnels used (current session)
+
+- **API tunnel (port 3000):**  
+  `https://bulgaria-transformation-biography-nottingham.trycloudflare.com`
+
+- **Web tunnel (Vite dev on port 8080):**  
+  `https://literary-determines-serial-prefers.trycloudflare.com`
+
+> These quick tunnel URLs change every time you restart `cloudflared`. If the Web tunnel URL changes, update `CLIENT_ORIGIN` and/or the client `.env` accordingly (see below).
+
+---
+
+### Start tunnels
+
+In two terminals:
+
+```bash
+# Terminal A (API)
+~/bin/cloudflared tunnel --url http://localhost:3000
+
+# Terminal B (Web - Vite)
+~/bin/cloudflared tunnel --url http://localhost:8080
